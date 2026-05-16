@@ -1,18 +1,12 @@
-"""Flask backend that proxies chat requests to OpenAI."""
+"""Flask app — thin HTTP layer that wires routes to the agent."""
 
-import httpx
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-from openai import OpenAI
+
+from agent import run_agent
 
 app = Flask(__name__)
 CORS(app)
-
-# Path to corporate CA cert (adjust if needed)
-CA_CERT = "corporate-ca.pem"
-
-http_client = httpx.Client(verify=CA_CERT)
-client = OpenAI(http_client=http_client)
 
 
 @app.route("/api/chat", methods=["POST"])
@@ -24,12 +18,8 @@ def chat():
         return jsonify({"error": "No messages provided"}), 400
 
     try:
-        response = client.chat.completions.create(
-            model="gpt-4o",
-            messages=messages,
-        )
-        assistant_message = response.choices[0].message.content
-        return jsonify({"reply": assistant_message})
+        result = run_agent(messages)
+        return jsonify(result)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 

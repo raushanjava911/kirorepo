@@ -11,8 +11,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Copy application code
 COPY corporate-ca.pem .
+COPY config.py .
+COPY agent.py .
 COPY app.py .
+COPY tools/ tools/
 
 EXPOSE 5000
 

@@ -1,6 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
 
-// When running behind nginx proxy, use relative path; for local dev use localhost:5000
 const API_URL = process.env.REACT_APP_API_URL || "";
 
 function App() {
@@ -27,18 +26,34 @@ function App() {
       const response = await fetch(`${API_URL}/api/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: updatedMessages }),
+        body: JSON.stringify({
+          messages: updatedMessages.map((m) => ({
+            role: m.role,
+            content: m.content,
+          })),
+        }),
       });
 
       const data = await response.json();
 
       if (response.ok) {
-        setMessages([...updatedMessages, { role: "assistant", content: data.reply }]);
+        const assistantMsg = {
+          role: "assistant",
+          content: data.reply,
+          toolsUsed: data.tools_used || [],
+        };
+        setMessages([...updatedMessages, assistantMsg]);
       } else {
-        setMessages([...updatedMessages, { role: "assistant", content: `Error: ${data.error}` }]);
+        setMessages([
+          ...updatedMessages,
+          { role: "assistant", content: `Error: ${data.error}`, toolsUsed: [] },
+        ]);
       }
     } catch (err) {
-      setMessages([...updatedMessages, { role: "assistant", content: `Error: ${err.message}` }]);
+      setMessages([
+        ...updatedMessages,
+        { role: "assistant", content: `Error: ${err.message}`, toolsUsed: [] },
+      ]);
     } finally {
       setLoading(false);
     }
@@ -47,23 +62,50 @@ function App() {
   return (
     <div className="chat-container">
       <header className="chat-header">
-        <h1>Chat with OpenAI</h1>
+        <h1>AI Agent</h1>
+        <p className="header-subtitle">Powered by tools: Date, Weather, Calculator, Wikipedia</p>
       </header>
 
       <div className="chat-messages">
         {messages.length === 0 && (
-          <p className="empty-state">Send a message to start chatting.</p>
+          <div className="empty-state">
+            <p>Ask me anything! I can:</p>
+            <ul>
+              <li>Tell you the current date/time in any timezone</li>
+              <li>Get live weather for any city</li>
+              <li>Do math calculations</li>
+              <li>Look up facts on Wikipedia</li>
+              <li>Combine multiple tools to answer complex questions</li>
+            </ul>
+          </div>
         )}
         {messages.map((msg, i) => (
           <div key={i} className={`message ${msg.role}`}>
-            <span className="message-role">{msg.role === "user" ? "You" : "Assistant"}</span>
+            <span className="message-role">
+              {msg.role === "user" ? "You" : "Agent"}
+            </span>
             <p className="message-content">{msg.content}</p>
+            {msg.toolsUsed && msg.toolsUsed.length > 0 && (
+              <details className="tools-used">
+                <summary>
+                  🔧 Used {msg.toolsUsed.length} tool{msg.toolsUsed.length > 1 ? "s" : ""}
+                </summary>
+                <ul>
+                  {msg.toolsUsed.map((tool, j) => (
+                    <li key={j}>
+                      <strong>{tool.tool}</strong>({JSON.stringify(tool.args)})
+                      <pre>{tool.result}</pre>
+                    </li>
+                  ))}
+                </ul>
+              </details>
+            )}
           </div>
         ))}
         {loading && (
           <div className="message assistant">
-            <span className="message-role">Assistant</span>
-            <p className="message-content typing">Thinking...</p>
+            <span className="message-role">Agent</span>
+            <p className="message-content typing">Thinking... 🤔</p>
           </div>
         )}
         <div ref={messagesEndRef} />
@@ -74,7 +116,7 @@ function App() {
           type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder="Type your message..."
+          placeholder="Ask me anything..."
           disabled={loading}
           aria-label="Chat message input"
         />
