@@ -69,7 +69,7 @@ function App() {
       <div className="chat-messages">
         {messages.length === 0 && (
           <div className="empty-state">
-            <p>Ask me anything! I can:</p>
+            <p>Please ask me anything! I can:</p>
             <ul>
               <li>Tell you the current date/time in any timezone</li>
               <li>Get live weather for any city</li>
