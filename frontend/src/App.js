@@ -63,19 +63,21 @@ function App() {
     <div className="chat-container">
       <header className="chat-header">
         <h1>AI Agent</h1>
-        <p className="header-subtitle">Powered by tools: Date, Weather, Calculator, Wikipedia</p>
+        <p className="header-subtitle">
+          Weather · Calculator · Wikipedia · HR Policy
+        </p>
       </header>
 
       <div className="chat-messages">
         {messages.length === 0 && (
           <div className="empty-state">
-            <p>Please ask me anything! I can:</p>
+            <p>Ask me anything! I can:</p>
             <ul>
               <li>Tell you the current date/time in any timezone</li>
               <li>Get live weather for any city</li>
               <li>Do math calculations</li>
               <li>Look up facts on Wikipedia</li>
-              <li>Combine multiple tools to answer complex questions</li>
+              <li>Answer questions about your HR policies</li>
             </ul>
           </div>
         )}
@@ -88,12 +90,13 @@ function App() {
             {msg.toolsUsed && msg.toolsUsed.length > 0 && (
               <details className="tools-used">
                 <summary>
-                  🔧 Used {msg.toolsUsed.length} tool{msg.toolsUsed.length > 1 ? "s" : ""}
+                  🔧 Used {msg.toolsUsed.length} agent{msg.toolsUsed.length > 1 ? "s" : ""}
                 </summary>
                 <ul>
                   {msg.toolsUsed.map((tool, j) => (
                     <li key={j}>
-                      <strong>{tool.tool}</strong>({JSON.stringify(tool.args)})
+                      <strong>{tool.tool}</strong>
+                      <span className="tool-task">: {tool.args.task}</span>
                       <pre>{tool.result}</pre>
                     </li>
                   ))}
@@ -116,7 +119,7 @@ function App() {
           type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder="Ask me anything..."
+          placeholder="Ask about HR policy, weather, facts..."
           disabled={loading}
           aria-label="Chat message input"
         />

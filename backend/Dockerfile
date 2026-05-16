@@ -20,6 +20,9 @@ COPY app.py .
 COPY tools/ tools/
 COPY agents/ agents/
 
+# Copy HR policy documents (baked into the image)
+COPY documents/ documents/
+
 EXPOSE 5000
 
 CMD ["python", "app.py"]

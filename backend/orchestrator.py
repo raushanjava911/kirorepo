@@ -18,6 +18,7 @@ Your available sub-agents:
 - weather_agent: Handles weather, temperature, forecasts, climate conditions, current date/time, and timezone questions.
 - research_agent: Handles factual questions about people, places, events, history, science, technology. Uses Wikipedia.
 - math_agent: Handles calculations, math problems, unit conversions, numerical comparisons.
+- hr_agent: Handles questions about company HR policies — leave, attendance, benefits, appraisals, code of conduct, holidays, work from home, dress code, etc.
 
 Rules:
 1. For simple questions, delegate to ONE agent.
@@ -30,6 +31,8 @@ Examples:
 - "What's the weather in Paris?" → weather_agent
 - "Tell me about Einstein" → research_agent
 - "What's 2^10?" → math_agent
+- "What's the leave policy?" → hr_agent
+- "How many casual leaves do I get?" → hr_agent
 - "What's the weather in Tokyo and tell me about the city" → weather_agent + research_agent
 - "Is the temperature in London higher than sqrt(900)?" → weather_agent + math_agent
 """
@@ -81,6 +84,23 @@ ORCHESTRATOR_TOOLS = [
                     "task": {
                         "type": "string",
                         "description": "The specific task or question to delegate to the math agent.",
+                    }
+                },
+                "required": ["task"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "hr_agent",
+            "description": "Delegate to the HR policy specialist. Handles questions about company policies — leave, attendance, benefits, appraisals, code of conduct, holidays, work from home, dress code, and any HR-related queries.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "task": {
+                        "type": "string",
+                        "description": "The specific HR policy question to delegate to the HR agent.",
                     }
                 },
                 "required": ["task"],

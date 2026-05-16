@@ -31,6 +31,78 @@ body {
   font-weight: 600;
 }
 
+.header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.upload-toggle {
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  color: #fff;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+
+.upload-toggle:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.upload-panel {
+  padding: 16px 24px;
+  background: #f8fffe;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.upload-panel h3 {
+  font-size: 1rem;
+  margin-bottom: 4px;
+}
+
+.upload-hint {
+  font-size: 0.85rem;
+  color: #666;
+  margin-bottom: 12px;
+}
+
+.upload-btn {
+  display: inline-block;
+  padding: 8px 16px;
+  background: #10a37f;
+  color: #fff;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.upload-btn:hover {
+  background: #0d8c6d;
+}
+
+.doc-list {
+  list-style: none;
+  margin-top: 12px;
+}
+
+.doc-list li {
+  padding: 4px 0;
+  font-size: 0.9rem;
+}
+
+.no-docs {
+  margin-top: 12px;
+  font-size: 0.85rem;
+  color: #888;
+}
+
+.tool-task {
+  color: #666;
+  font-size: 0.85rem;
+}
+
 .chat-messages {
   flex: 1;
   overflow-y: auto;
