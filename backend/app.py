@@ -1,9 +1,9 @@
-"""Flask app — thin HTTP layer that wires routes to the agent."""
+"""Flask app — thin HTTP layer that wires routes to the orchestrator."""
 
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 
-from agent import run_agent
+from orchestrator import run_orchestrator
 
 app = Flask(__name__)
 CORS(app)
@@ -18,7 +18,7 @@ def chat():
         return jsonify({"error": "No messages provided"}), 400
 
     try:
-        result = run_agent(messages)
+        result = run_orchestrator(messages)
         return jsonify(result)
     except Exception as e:
         return jsonify({"error": str(e)}), 500

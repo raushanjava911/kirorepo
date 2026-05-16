@@ -14,9 +14,11 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy application code
 COPY corporate-ca.pem .
 COPY config.py .
+COPY orchestrator.py .
 COPY agent.py .
 COPY app.py .
 COPY tools/ tools/
+COPY agents/ agents/
 
 EXPOSE 5000
 
