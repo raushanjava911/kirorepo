@@ -1,9 +1,10 @@
-"""Orchestrator Agent — routes user queries to specialized sub-agents."""
+"""Orchestrator Agent — routes user queries to specialized sub-agents and MCP tools."""
 
 import json
 
 from config import openai_client, MODEL, MAX_AGENT_ITERATIONS
 from agents import AGENTS
+from mcp_client import get_mcp_tool_schemas, call_mcp_tool, is_mcp_tool
 
 ORCHESTRATOR_SYSTEM_PROMPT = """You are an orchestrator agent that manages a team of specialized sub-agents.
 
@@ -19,6 +20,10 @@ Your available sub-agents:
 - research_agent: Handles factual questions about people, places, events, history, science, technology. Uses Wikipedia.
 - math_agent: Handles calculations, math problems, unit conversions, numerical comparisons.
 - hr_agent: Handles questions about company HR policies — leave, attendance, benefits, appraisals, code of conduct, holidays, work from home, dress code, etc.
+- email_agent: Handles composing and sending emails. Use when the user wants to send, write, or email someone.
+
+You may also have additional tools from external MCP servers (prefixed with their server name).
+Use these when the task matches their description.
 
 Rules:
 1. For simple questions, delegate to ONE agent.
@@ -26,6 +31,7 @@ Rules:
 3. Always delegate — do NOT try to answer questions yourself without using an agent.
 4. After receiving agent responses, synthesize them into a clear, unified answer for the user.
 5. If a question doesn't fit any agent well, use the research_agent as a fallback.
+6. For MCP tools, call them directly — they are not agents, just tools.
 
 Examples:
 - "What's the weather in Paris?" → weather_agent
@@ -33,6 +39,8 @@ Examples:
 - "What's 2^10?" → math_agent
 - "What's the leave policy?" → hr_agent
 - "How many casual leaves do I get?" → hr_agent
+- "Send an email to john@example.com about the meeting" → email_agent
+- "Email my manager that I'll be late" → email_agent
 - "What's the weather in Tokyo and tell me about the city" → weather_agent + research_agent
 - "Is the temperature in London higher than sqrt(900)?" → weather_agent + math_agent
 """
@@ -107,30 +115,54 @@ ORCHESTRATOR_TOOLS = [
             },
         },
     },
+    {
+        "type": "function",
+        "function": {
+            "name": "email_agent",
+            "description": "Delegate to the email specialist. Handles composing and sending emails to recipients.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "task": {
+                        "type": "string",
+                        "description": "The email task including recipient, subject/topic, and any content details.",
+                    }
+                },
+                "required": ["task"],
+            },
+        },
+    },
 ]
+
+
+def _get_all_tools() -> list[dict]:
+    """Combine agent tools + MCP tools."""
+    mcp_tools = get_mcp_tool_schemas()
+    return ORCHESTRATOR_TOOLS + mcp_tools
 
 
 def run_orchestrator(messages: list) -> dict:
     """
     Orchestrator loop:
     1. Receives user messages
-    2. Decides which sub-agent(s) to call
-    3. Executes sub-agents and collects results
+    2. Decides which sub-agent(s) or MCP tool(s) to call
+    3. Executes them and collects results
     4. Synthesizes a final answer
 
-    Returns dict with 'reply', 'tools_used' (which agents were called and their results).
+    Returns dict with 'reply', 'tools_used' (which agents/tools were called and their results).
     """
     # Prepend orchestrator system prompt
     if not messages or messages[0].get("role") != "system":
         messages = [{"role": "system", "content": ORCHESTRATOR_SYSTEM_PROMPT}] + messages
 
+    all_tools = _get_all_tools()
     agents_called_log = []
 
     for iteration in range(MAX_AGENT_ITERATIONS):
         response = openai_client.chat.completions.create(
             model=MODEL,
             messages=messages,
-            tools=ORCHESTRATOR_TOOLS,
+            tools=all_tools,
         )
 
         choice = response.choices[0]
@@ -142,29 +174,34 @@ def run_orchestrator(messages: list) -> dict:
                 "tools_used": agents_called_log,
             }
 
-        # Orchestrator wants to delegate to sub-agent(s)
+        # Orchestrator wants to delegate to sub-agent(s) or call MCP tool(s)
         assistant_message = choice.message
         messages.append(assistant_message)
 
         for tool_call in assistant_message.tool_calls:
-            agent_name = tool_call.function.name
+            tool_name = tool_call.function.name
             args = json.loads(tool_call.function.arguments)
-            task = args.get("task", "")
 
-            # Execute the sub-agent
-            if agent_name in AGENTS:
-                result = AGENTS[agent_name](task)
+            # Determine if it's a sub-agent or an MCP tool
+            if tool_name in AGENTS:
+                task = args.get("task", "")
+                result = AGENTS[tool_name](task)
+                log_args = {"task": task}
+            elif is_mcp_tool(tool_name):
+                result = call_mcp_tool(tool_name, args)
+                log_args = args
             else:
-                result = f"Error: Unknown agent '{agent_name}'"
+                result = f"Error: Unknown agent/tool '{tool_name}'"
+                log_args = args
 
             # Log for transparency
             agents_called_log.append({
-                "tool": agent_name,
-                "args": {"task": task},
+                "tool": tool_name,
+                "args": log_args,
                 "result": result,
             })
 
-            # Feed sub-agent result back to orchestrator
+            # Feed result back to orchestrator
             messages.append({
                 "role": "tool",
                 "tool_call_id": tool_call.id,

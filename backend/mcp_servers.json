@@ -1,0 +1,8 @@
+{
+  "servers": {
+    "filesystem": {
+      "command": "uvx",
+      "args": ["mcp-server-filesystem", "/app/documents"]
+    }
+  }
+}

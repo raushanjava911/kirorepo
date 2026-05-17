@@ -15,12 +15,15 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY corporate-ca.pem .
 COPY config.py .
 COPY orchestrator.py .
+COPY mcp_client.py .
+COPY mcp_server.py .
+COPY mcp_servers.json .
 COPY agent.py .
 COPY app.py .
 COPY tools/ tools/
 COPY agents/ agents/
 
-# Copy HR policy documents (baked into the image)
+# Copy HR policy documents
 COPY documents/ documents/
 
 EXPOSE 5000

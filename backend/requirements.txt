@@ -4,3 +4,4 @@ flask-cors
 certifi
 PyPDF2
 python-docx
+mcp[cli]
